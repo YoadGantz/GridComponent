@@ -1,15 +1,13 @@
-import './App.css';
 import GridApp from './pages/GridApp';
 import data from './data.json'
+import './App.css';
 
 function App() {
-  let columns = ['name', 'country', 'currency', 'number', 'phone', 'email']
   return (
     <div className="App">
       <GridApp
-        isAlternating={true}
+        isAlternating={false}
         isHeaderEnabled={true}
-        columns={columns}
         rows={data}
         rowsPerPage={5}
         // style={{

@@ -1,69 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import lodash from 'lodash';
+import { orderBy, includes, filter, difference, concat } from 'lodash';
 import Header from '../cmps/Header';
 import Row from '../cmps/Row';
 import Pagination from '../cmps/Pagination';
 
-const GridApp = (props) => {
-    let [pageNum, setPageNum] = useState(1)
-    let { columns,
-        rows,
-        isHeaderEnabled,
-        rowsPerPage,
-        isAlternating,
-        style
-    } = props
-    let [rowsToShow, setRowsToShow] = useState([...rows])
-    let [parameter, setParameter] = useState('')
-    let [orderDirection, setOrderDirection] = useState('desc')
-    let [selectedIds, setSelectedIds] = useState([])
+const GridApp = ({
+    rows,
+    isHeaderEnabled,
+    rowsPerPage,
+    isAlternating,
+}, props) => {
+    const [pageNum, setPageNum] = useState(1)
+    const [rowsToShow, setRowsToShow] = useState(rows)
+    const [currentSortBy, setCurrentSortBy] = useState('')
+    const [orderDirection, setOrderDirection] = useState('desc')
+    const [selectedIds, setSelectedIds] = useState([])
 
     useEffect(() => {
-        let selectedIdsFromStorage = JSON.parse(localStorage.getItem('selectedIds')) || []
-        console.log(selectedIdsFromStorage);
-        setSelectedIds(selectedIdsFromStorage)
+        const selectedIdsFromStorage = JSON.parse(localStorage.getItem('selectedIds'))
+        if (selectedIdsFromStorage) {
+            setSelectedIds(selectedIdsFromStorage)
+        }
     }, [])
 
-    const sort = (para = parameter) => {
-        if (para === parameter) {
+    const sort = (columnTitle) => {
+        if (columnTitle === currentSortBy) {
             setOrderDirection((previous) => previous === 'desc' ? 'asc' : 'desc')
         }
         else {
             setOrderDirection('desc')
+            setCurrentSortBy(columnTitle)
         }
-        setParameter(para)
-        setRowsToShow(lodash.orderBy(rows, para, orderDirection).map(p => p))
+        setRowsToShow(orderBy(rows, columnTitle, orderDirection))
     }
 
-    const filterBy = (e) => {
-        setRowsToShow(lodash.filter([...rows], (row) => {
-            let rowAsString = JSON.stringify(row)
-            rowAsString = rowAsString.substring(1, rowAsString.length - 1).toLowerCase()
-            console.log(rowAsString);
-            return rowAsString.includes(e.target.value)
-        }).map(p => p))
-    }
+    const search = ({ value }) =>
+        setRowsToShow(filter(rows, (row) => Object.values(row).some(cellValue => cellValue.toString().toLowerCase().includes(value.toLowerCase()))
+        ))
 
-    const filterRows = () => {
-        return rowsToShow.filter((row, idx) => {
-            return idx < rowsPerPage * pageNum && rowsPerPage * (pageNum - 1) <= idx
-        })
+    const getRowsForCurrentPage = () => { // find better function name than paginateRows()
+        const firstRowToShow = rowsPerPage * (pageNum - 1)
+        const lastRowToShow = rowsPerPage * pageNum
+        return rowsToShow.slice(firstRowToShow, lastRowToShow)
     }
 
     const handleSelectAll = () => {
-        let newSelectedIds = [...selectedIds]
-        let filteredIds = filterRows().map(row => {
-            return row.id
-        })
-        if (checkIfHasUnselected()) {
-            newSelectedIds.push(...filteredIds.filter((filteredId) => {
-                return !selectedIds.includes(filteredId)
-            }))
-        }
-        else {
-            newSelectedIds = newSelectedIds.filter(selectedId => {
-                return !filteredIds.includes(selectedId)
-            })
+        let newSelectedIds = []
+        const filteredIds = getRowsForCurrentPage().map(row => row.id)
+        const differences = difference(filteredIds, selectedIds)
+        if (differences.length > 0) {
+            newSelectedIds = concat(selectedIds, ...differences)
+        } else {
+            newSelectedIds.push(...selectedIds.filter(selectedId => !filteredIds.includes(selectedId)))
         }
         setSelectedIds(newSelectedIds)
         localStorage.setItem('selectedIds', JSON.stringify(newSelectedIds))
@@ -71,14 +59,9 @@ const GridApp = (props) => {
 
     const handleSelect = (id) => {
         let newSelectedIds = []
-        console.log(id);
-        console.log(lodash.includes(selectedIds, id));
-        if (lodash.includes(selectedIds, id)) {
-            newSelectedIds = selectedIds?.filter(selectedId => {
-                return selectedId !== id
-            })
-        }
-        else {
+        if (includes(selectedIds, id)) {
+            newSelectedIds = selectedIds?.filter(selectedId => selectedId !== id)
+        } else {
             newSelectedIds = [...selectedIds, id]
         }
         setSelectedIds(newSelectedIds)
@@ -86,41 +69,39 @@ const GridApp = (props) => {
     }
 
     const checkIfHasUnselected = () => {
-        let bools = filterRows()
-            .map(row => {
-                return lodash.includes(selectedIds, row.id)
-            })
-        let hasUnselected = bools.some(value => !value);
-        return hasUnselected;
+        const isSelectedRows = getRowsForCurrentPage()
+            .map(row => includes(selectedIds, row.id))
+        return isSelectedRows.some(isSelected => !isSelected);
     }
 
 
     return (
         <div>
-            <input type="search" placeholder="Search" onChange={(e) => filterBy(e)} />
+            <input type="search" placeholder="Search" onChange={(event) => search(event.target)} />
             <table>
                 <thead>
-                    {isHeaderEnabled && <Header columns={columns} sort={sort} handleSelectAll={handleSelectAll} hasUnselected={checkIfHasUnselected()} />}
+                    {isHeaderEnabled && <Header
+                        columnTitles={Object.keys(rows[0]).filter(columnTitle => columnTitle !== 'id')}
+                        sort={sort}
+                        handleSelectAll={handleSelectAll}
+                        hasUnselected={checkIfHasUnselected()}
+                    />}
                 </thead>
                 <tbody className={isAlternating ? 'alternating' : ''}>
-                    {filterRows().map((row, idx) => {
-                        return <Row
-                            style={style}
-                            isAlternating={isAlternating}
-                            isOdd={idx % 2 !== 0}
-                            row={row}
-                            key={idx}
-                            pageNum={pageNum}
-                            rowsPerPage={rowsPerPage}
-                            handleSelect={handleSelect}
-                            isSelected={lodash.includes(selectedIds, row.id)}
-                        />
-                    })}
+                    {getRowsForCurrentPage().map((row, idx) => <Row
+                        key={row.id}
+                        row={row}
+                        isOdd={idx % 2 !== 0}
+                        isAlternating={isAlternating}
+                        handleSelect={handleSelect}
+                        isSelected={includes(selectedIds, row.id)}
+                        {...props}
+                    />
+                    )}
                 </tbody>
             </table>
             <Pagination
-                numOfRows={rows.length}
-                rowsPerPage={rowsPerPage}
+                numOfPages={rowsToShow.length / rowsPerPage}
                 setPageNum={setPageNum}
             />
         </div>
