@@ -14,7 +14,7 @@ const Row = ({
         </td>
         {Object.entries(row)
             .filter(entry => entry[0] !== 'id')
-            .map(item => <td style={{ backgroundColor: isAlternating && isOdd ? style?.secondaryColor : style?.primaryColor }} key={item[0] + item[1]}>{item[1]}</td>
+            .map(cell => <td style={{ backgroundColor: isAlternating && isOdd ? style?.secondaryColor : style?.primaryColor }} key={cell[0] + cell[1]}>{cell[1]}</td>
         )}
     </tr>
 );

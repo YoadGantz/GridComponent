@@ -1,15 +1,14 @@
 import React from 'react';
+import Checkbox from './Checkbox';
 
 const Header = ({
     columnTitles,
     sort,
     handleSelectAll,
-    hasUnselected
+    checkboxStatus
 }) => (
     <tr>
-        <th>
-            <input type="checkbox" onChange={handleSelectAll} checked={!hasUnselected} />
-        </th>
+        <Checkbox handleSelectAll={handleSelectAll} checkboxStatus={checkboxStatus}/>
         {columnTitles.map(columnTitle => {
             return <th className="capitalized" key={columnTitle} onClick={() => sort(columnTitle)}>{columnTitle}</th>
         })}

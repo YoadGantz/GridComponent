@@ -1,22 +1,16 @@
-import GridApp from './pages/GridApp';
+import Grid from './pages/Grid';
 import data from './data.json'
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <GridApp
-        isAlternating={false}
-        isHeaderEnabled={true}
-        rows={data}
-        rowsPerPage={5}
-        // style={{
-        //   primaryColor: 'red',
-        //   secondaryColor: 'pink'
-        // }}
-      />
-    </div >
-  );
-}
+const App = () => (
+  <div className="App">
+    <Grid
+      isAlternating
+      isHeaderEnabled={true}
+      rows={data}
+      rowsPerPage={5}
+    />
+  </div>
+)
 
 export default App;
