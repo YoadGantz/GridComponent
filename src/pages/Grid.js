@@ -31,10 +31,12 @@ const Grid = ({
             rows,
             (row) => Object.values(row)
                 .some(cellValue => cellValue.toString().toLowerCase().includes(currentSearchBy)))
+                // should also be tolowercase?
         const rowsToShow = orderBy(filteredRows, currentSortBy, orderDirection)
         const firstRowToShow = rowsPerPage * (pageNumber - 1)
         const lastRowToShow = rowsPerPage * pageNumber
 
+        // istead of filtering on each render, add useMemo
         return rowsToShow.slice(firstRowToShow, lastRowToShow)
     }
 
@@ -42,6 +44,7 @@ const Grid = ({
         setSelectedIds([])
         setIsAllSelected(previous => !previous)
 
+        // since 'selectedIds' is used more than once in this code put it in a const variable
         localStorage.setItem('selectedIds', JSON.stringify(selectedIds))
     }
 
