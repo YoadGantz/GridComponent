@@ -31,7 +31,7 @@ const Grid = ({
             rows,
             (row) => Object.values(row)
                 .some(cellValue => cellValue.toString().toLowerCase().includes(currentSearchBy)))
-                // should also be tolowercase?
+                // should currentSearchBy also be tolowercase?
         const rowsToShow = orderBy(filteredRows, currentSortBy, orderDirection)
         const firstRowToShow = rowsPerPage * (pageNumber - 1)
         const lastRowToShow = rowsPerPage * pageNumber
